@@ -4,10 +4,14 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -28,7 +32,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        // Request Camera permission
         if (allPermissionGranted())
             startCamera()
         else
@@ -40,7 +43,29 @@ class MainActivity : AppCompatActivity() {
 
     private fun captureImage() {}
 
-    private fun startCamera() {}
+    private fun startCamera() {
+        val surfaceProvider = binding.viewFinder.surfaceProvider
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+            // Build Camera Preview
+            val preview = Preview.Builder()
+                .build()
+                .also { preview ->
+                    preview.surfaceProvider = surfaceProvider
+                }
+            // Set Default Camera To Back Camera
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            try {
+                // Make Sure That Nothing Is Bound To The cameraProvider
+                cameraProvider.unbindAll()
+                // Bind cameraSelector and preview To The cameraProvider
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview)
+            } catch (exception: Exception) {
+                Log.e("Use case binding failed", exception.toString())
+            }
+        }, ContextCompat.getMainExecutor(this))
+    }
 
     private fun requestPermissions() {
         activityResultLauncher.launch(REQUIRED_PERMISSIONS)
@@ -73,6 +98,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        // TODO("remember to delete this tag if it is unnecessary")
         private const val TAG = "CameraXApp"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS: Array<String> =
