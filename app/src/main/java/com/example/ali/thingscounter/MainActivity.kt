@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.ImageCapture
 import androidx.core.content.ContextCompat
@@ -40,7 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun startCamera() {}
 
-    private fun requestPermissions() {}
+    private fun requestPermissions() {
+        activityResultLauncher.launch(REQUIRED_PERMISSIONS)
+    }
 
     private fun allPermissionGranted() = REQUIRED_PERMISSIONS.all {
         ContextCompat.checkSelfPermission(
@@ -48,6 +52,20 @@ class MainActivity : AppCompatActivity() {
             it
         ) == PackageManager.PERMISSION_GRANTED
     }
+
+    private val activityResultLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            var isPermissionGranted = true
+            permissions.entries.forEach {
+                if (it.key in REQUIRED_PERMISSIONS && !it.value)
+                    isPermissionGranted = false
+            }
+            if (!isPermissionGranted) {
+                val toastMessage = "Camera permission is disabled. Please allow it to continue."
+                Toast.makeText(baseContext, toastMessage, Toast.LENGTH_LONG).show()
+            } else
+                startCamera()
+        }
 
     override fun onDestroy() {
         super.onDestroy()
