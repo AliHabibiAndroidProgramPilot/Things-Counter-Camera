@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -20,7 +21,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import com.example.ali.thingscounter.databinding.ActivityMainBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -76,7 +81,19 @@ class MainActivity : AppCompatActivity() {
                 override fun onError(exception: ImageCaptureException) {
                     Log.i("CameraX", exception.toString())
                 }
-            }).run { playShutterSound() }
+            }).run {
+            lifecycleScope.launch { withContext(Dispatchers.IO) { playShutterSound() } }
+            binding.viewFlashOverlay.apply {
+                visibility = View.VISIBLE
+                animate()
+                    .alpha(0f)
+                    .setDuration(300)
+                    .withEndAction {
+                        visibility = View.INVISIBLE
+                        alpha = 1f
+                    }
+            }
+        }
     }
 
     private fun startCamera() {
