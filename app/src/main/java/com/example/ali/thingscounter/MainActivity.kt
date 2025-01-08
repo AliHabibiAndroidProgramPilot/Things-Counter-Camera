@@ -1,15 +1,18 @@
 package com.example.ali.thingscounter
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
@@ -17,6 +20,8 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.ali.thingscounter.databinding.ActivityMainBinding
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -41,7 +46,36 @@ class MainActivity : AppCompatActivity() {
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
 
-    private fun captureImage() {}
+    private fun captureImage() {
+        val imageCapture = imageCapture ?: return
+        // Using TimeStamp As Unique Saving Methode For Display Name In MediaStore
+        val name = SimpleDateFormat(FILENAME_FORMAT, Locale.US).format(System.currentTimeMillis())
+        val contentValue = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+            put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Things Counter")
+            }
+        }
+        val outputFile = ImageCapture.OutputFileOptions.Builder(
+            contentResolver,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            contentValue
+        ).build()
+        imageCapture.takePicture(
+            outputFile,
+            ContextCompat.getMainExecutor(this),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    val message = "Photo capture succeeded: ${outputFileResults.savedUri}"
+                    Toast.makeText(baseContext, message, Toast.LENGTH_LONG).show()
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.i("Photo", exception.toString())
+                }
+            })
+    }
 
     private fun startCamera() {
         val surfaceProvider = binding.viewFinder.surfaceProvider
@@ -54,13 +88,15 @@ class MainActivity : AppCompatActivity() {
                 .also { preview ->
                     preview.surfaceProvider = surfaceProvider
                 }
-            // Set Default Camera To Back Camera
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build()
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             try {
                 // Make Sure That Nothing Is Bound To The cameraProvider
                 cameraProvider.unbindAll()
                 // Bind cameraSelector and preview To The cameraProvider
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview)
+                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
             } catch (exception: Exception) {
                 Log.e("Use case binding failed", exception.toString())
             }
@@ -98,8 +134,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        // TODO("remember to delete this tag if it is unnecessary")
-        private const val TAG = "CameraXApp"
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS: Array<String> =
             mutableListOf(Manifest.permission.CAMERA).apply {
