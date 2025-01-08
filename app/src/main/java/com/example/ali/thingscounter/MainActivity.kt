@@ -70,15 +70,13 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    /*val message = "Photo capture succeeded: ${outputFileResults.savedUri}"
-                    Toast.makeText(baseContext, message, Toast.LENGTH_LONG).show()*/
-                    playShutterSound()
+                    Log.i("CameraX", outputFileResults.savedUri.toString())
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    Log.i("Photo", exception.toString())
+                    Log.i("CameraX", exception.toString())
                 }
-            })
+            }).run { playShutterSound() }
     }
 
     private fun startCamera() {
