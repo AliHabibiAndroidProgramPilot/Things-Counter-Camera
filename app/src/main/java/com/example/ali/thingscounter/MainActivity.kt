@@ -3,6 +3,7 @@ package com.example.ali.thingscounter
 import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.media.MediaActionSound
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
+    private val mediaActionSound = MediaActionSound()
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.getInsetsController(window, window.decorView).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -62,13 +64,15 @@ class MainActivity : AppCompatActivity() {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             contentValue
         ).build()
+
         imageCapture.takePicture(
             outputFile,
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    val message = "Photo capture succeeded: ${outputFileResults.savedUri}"
-                    Toast.makeText(baseContext, message, Toast.LENGTH_LONG).show()
+                    /*val message = "Photo capture succeeded: ${outputFileResults.savedUri}"
+                    Toast.makeText(baseContext, message, Toast.LENGTH_LONG).show()*/
+                    playShutterSound()
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -103,6 +107,15 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    private fun playShutterSound() {
+        mediaActionSound.load(MediaActionSound.SHUTTER_CLICK)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (MediaActionSound.mustPlayShutterSound())
+                mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)
+        } else
+            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)
+    }
+
     private fun requestPermissions() {
         activityResultLauncher.launch(REQUIRED_PERMISSIONS)
     }
@@ -131,6 +144,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        mediaActionSound.release()
     }
 
     companion object {
