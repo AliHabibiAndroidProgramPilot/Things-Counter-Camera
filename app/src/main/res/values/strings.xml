@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Things Counter</string>
+    <string name="flash_icon">Flash_Icon</string>
+    <string name="image_capture_icon">image_capture_icon</string>
+    <string name="change_camera_icon">change_camera_icon</string>
 </resources>

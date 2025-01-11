@@ -27,15 +27,56 @@
         app:layout_constraintStart_toStartOf="@id/viewFinder"
         app:layout_constraintTop_toTopOf="@id/viewFinder" />
 
-    <Button
+    <ImageButton
         android:id="@+id/image_capture_button"
-        android:layout_width="110dp"
-        android:layout_height="110dp"
+        android:layout_width="85dp"
+        android:layout_height="85dp"
         android:layout_marginBottom="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/image_capture_icon"
         android:elevation="5dp"
-        android:text="take photo"
+        android:focusable="true"
+        android:scaleType="fitXY"
+        android:src="@drawable/ic_circle"
         app:layout_constraintBottom_toBottomOf="@id/viewFinder"
-        app:layout_constraintEnd_toEndOf="@id/viewFinder"
-        app:layout_constraintStart_toStartOf="@id/viewFinder" />
+        app:layout_constraintStart_toEndOf="@id/ic_flash"
+        app:layout_constraintEnd_toStartOf="@id/change_camera"
+        app:tint="@color/white"
+        tools:layout_editor_absoluteX="326dp" />
+
+    <ImageButton
+        android:id="@+id/ic_flash"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/flash_icon"
+        android:elevation="5dp"
+        android:focusable="true"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_flash_auto"
+        app:layout_constraintBottom_toBottomOf="@id/image_capture_button"
+        app:layout_constraintEnd_toStartOf="@id/image_capture_button"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/image_capture_button"
+        app:tint="@color/white" />
+
+    <ImageButton
+        android:id="@+id/change_camera"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:contentDescription="@string/change_camera_icon"
+        android:elevation="5dp"
+        android:focusable="true"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_switch_camera"
+        app:layout_constraintStart_toEndOf="@id/image_capture_button"
+        app:layout_constraintBottom_toBottomOf="@id/image_capture_button"
+        app:layout_constraintTop_toTopOf="@id/image_capture_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="@color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
