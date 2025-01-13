@@ -89,7 +89,7 @@ class MainActivity : AppCompatActivity() {
                     .alpha(0f)
                     .setDuration(300)
                     .withEndAction {
-                        visibility = View.INVISIBLE
+                        visibility = View.GONE
                         alpha = 1f
                     }
             }
