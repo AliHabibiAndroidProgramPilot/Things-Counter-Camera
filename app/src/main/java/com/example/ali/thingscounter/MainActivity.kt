@@ -93,6 +93,16 @@ class MainActivity : AppCompatActivity() {
                         alpha = 1f
                     }
             }
+            binding.circle.apply {
+                visibility = View.VISIBLE
+                animate()
+                    .alpha(0f)
+                    .setDuration(400)
+                    .withEndAction {
+                        visibility = View.GONE
+                        alpha = 1f
+                    }
+            }
         }
     }
 
