@@ -120,14 +120,24 @@ class MainActivity : AppCompatActivity() {
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            binding.changeCamera.setOnClickListener {
+                cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                else
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                try {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                } catch (exception: Exception) {
+                    Log.e("Use case binding failed", "${exception.cause} ${exception.message}")
+                }
+            }
             try {
-                // Make Sure That Nothing Is Bound To The cameraProvider
                 cameraProvider.unbindAll()
-                // Bind cameraSelector and preview To The cameraProvider
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
             } catch (exception: Exception) {
-                Log.e("Use case binding failed", exception.toString())
+                Log.e("Use case binding failed", "${exception.cause} ${exception.message}")
             }
         }, ContextCompat.getMainExecutor(this))
     }
