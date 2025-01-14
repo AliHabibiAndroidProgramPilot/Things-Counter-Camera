@@ -122,10 +122,21 @@ class MainActivity : AppCompatActivity() {
                 .build()
             var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             binding.changeCamera.setOnClickListener {
-                cameraSelector = if (cameraSelector == CameraSelector.DEFAULT_BACK_CAMERA)
-                    CameraSelector.DEFAULT_FRONT_CAMERA
-                else
-                    CameraSelector.DEFAULT_BACK_CAMERA
+                when (cameraSelector) {
+                    CameraSelector.DEFAULT_BACK_CAMERA -> {
+                        cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+                        it.animate().rotationY(180f).duration = 400
+                    }
+
+                    CameraSelector.DEFAULT_FRONT_CAMERA -> {
+                        cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                        it.animate().rotationY(-180f).duration = 400
+                    }
+
+                    else -> {
+                        CameraSelector.DEFAULT_BACK_CAMERA
+                    }
+                }
                 try {
                     cameraProvider.unbindAll()
                     cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
