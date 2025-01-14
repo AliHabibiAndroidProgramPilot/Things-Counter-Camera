@@ -133,6 +133,7 @@ class MainActivity : AppCompatActivity() {
                     Log.e("Use case binding failed", "${exception.cause} ${exception.message}")
                 }
             }
+
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
@@ -144,11 +145,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun playShutterSound() {
         mediaActionSound.load(MediaActionSound.SHUTTER_CLICK)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (MediaActionSound.mustPlayShutterSound())
-                mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)
-        } else
-            mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)
+        mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)
     }
 
     private fun requestPermissions() {
