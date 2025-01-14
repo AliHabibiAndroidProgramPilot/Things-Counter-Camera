@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -117,9 +118,15 @@ class MainActivity : AppCompatActivity() {
                 .also { preview ->
                     preview.surfaceProvider = surfaceProvider
                 }
+            var currentFlashState = FlashState.OFF
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
+            binding.icFlash.setOnClickListener{
+                currentFlashState = currentFlashState.next()
+                (it as ImageButton).setImageResource(currentFlashState.iconResId)
+                imageCapture!!.flashMode = currentFlashState.flashMode
+            }
             var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             binding.changeCamera.setOnClickListener {
                 when (cameraSelector) {

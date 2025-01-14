@@ -86,7 +86,7 @@
         android:elevation="5dp"
         android:focusable="true"
         android:scaleType="centerInside"
-        android:src="@drawable/ic_flash_auto"
+        android:src="@drawable/ic_flash_off"
         app:layout_constraintBottom_toBottomOf="@id/image_capture_button"
         app:layout_constraintEnd_toStartOf="@id/image_capture_button"
         app:layout_constraintStart_toStartOf="@id/viewFinderBox"
