@@ -122,9 +122,19 @@ class MainActivity : AppCompatActivity() {
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
-            binding.icFlash.setOnClickListener{
+            val imageButton: ImageButton = binding.icFlash
+            imageButton.setOnClickListener {
                 currentFlashState = currentFlashState.next()
-                (it as ImageButton).setImageResource(currentFlashState.iconResId)
+                imageButton.animate()
+                    .alpha(0f)
+                    .setDuration(100)
+                    .withEndAction {
+                        imageButton.setImageResource(currentFlashState.iconResId)
+                        imageButton.animate()
+                            .alpha(1f)
+                            .setDuration(100)
+                            .start()
+                    }.start()
                 imageCapture!!.flashMode = currentFlashState.flashMode
             }
             var cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
