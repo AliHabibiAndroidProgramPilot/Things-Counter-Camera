@@ -8,11 +8,15 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+import android.view.MotionEvent
+import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraControl
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -36,6 +40,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var cameraInfo: CameraInfo
+    private lateinit var cameraControl: CameraControl
     private val mediaActionSound = MediaActionSound()
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -49,7 +55,23 @@ class MainActivity : AppCompatActivity() {
             startCamera()
         else
             requestPermissions()
-
+        val scaleGestureDetector = ScaleGestureDetector(
+            this,
+            object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+                override fun onScale(detector: ScaleGestureDetector): Boolean {
+                    val currentZoomRatio: Float = cameraInfo.zoomState.value?.linearZoom ?: 0f
+                    val newZoomRatio =
+                        (currentZoomRatio + (detector.scaleFactor - 1)).coerceIn(0f, 1f)
+                    cameraControl.setLinearZoom(newZoomRatio)
+                    return true
+                }
+            })
+        binding.viewFinder.setOnTouchListener { view, event ->
+            scaleGestureDetector.onTouchEvent(event)
+            if (event.action == MotionEvent.ACTION_UP)
+                view.performClick()
+            return@setOnTouchListener true
+        }
         binding.imageCaptureButton.setOnClickListener { captureImage() }
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -122,15 +144,15 @@ class MainActivity : AppCompatActivity() {
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                 .build()
-            val imageButton: ImageButton = binding.icFlash
-            imageButton.setOnClickListener {
+            val flashButton: ImageButton = binding.icFlash
+            flashButton.setOnClickListener {
                 currentFlashState = currentFlashState.next()
-                imageButton.animate()
+                flashButton.animate()
                     .alpha(0f)
                     .setDuration(100)
                     .withEndAction {
-                        imageButton.setImageResource(currentFlashState.iconResId)
-                        imageButton.animate()
+                        flashButton.setImageResource(currentFlashState.iconResId)
+                        flashButton.animate()
                             .alpha(1f)
                             .setDuration(100)
                             .start()
@@ -156,7 +178,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 try {
                     cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                    val camera =
+                        cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                    cameraInfo = camera.cameraInfo
+                    cameraControl = camera.cameraControl
                 } catch (exception: Exception) {
                     Log.e("Use case binding failed", "${exception.cause} ${exception.message}")
                 }
@@ -164,7 +189,10 @@ class MainActivity : AppCompatActivity() {
 
             try {
                 cameraProvider.unbindAll()
-                cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                val camera =
+                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture)
+                cameraInfo = camera.cameraInfo
+                cameraControl = camera.cameraControl
             } catch (exception: Exception) {
                 Log.e("Use case binding failed", "${exception.cause} ${exception.message}")
             }
