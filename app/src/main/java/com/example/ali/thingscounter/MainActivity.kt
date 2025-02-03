@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.pm.PackageManager
 import android.media.MediaActionSound
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -29,16 +28,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.ali.thingscounter.databinding.ActivityMainBinding
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.objects.ObjectDetection
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Locale
-import java.util.Objects
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -104,7 +98,6 @@ class MainActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    outputFileResults.savedUri?.let { runObjectDetection(it) }
                     Log.i("CameraX", outputFileResults.savedUri.toString())
                 }
 
@@ -133,25 +126,6 @@ class MainActivity : AppCompatActivity() {
                         alpha = 1f
                     }
             }
-        }
-    }
-
-    private fun runObjectDetection(filePath: Uri) {
-        try {
-            val inputImage = InputImage.fromFilePath(this, filePath)
-            val options = ObjectDetectorOptions.Builder()
-                .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
-                .enableClassification()
-                .build()
-            ObjectDetection.getClient(options).process(inputImage)
-                .addOnSuccessListener {
-                    Log.i("MLKit_ODT", "Successful")
-                }
-                .addOnFailureListener {
-                    Log.e("MLKit_ODT", it.message.toString())
-                }
-        } catch (e: IOException) {
-            e.printStackTrace()
         }
     }
 
