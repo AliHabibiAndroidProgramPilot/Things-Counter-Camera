@@ -32,6 +32,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        mlModelBinding true
     }
 }
 
@@ -48,6 +49,9 @@ dependencies {
     implementation libs.androidx.camera.lifecycle
     implementation libs.androidx.camera.view
     implementation libs.androidx.camera.extensions
+    implementation libs.tensorflow.lite.support
+    implementation libs.tensorflow.lite.metadata
+    implementation libs.tensorflow.lite.gpu
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

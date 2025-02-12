@@ -1,9 +1,17 @@
 package com.example.ali.thingscounter
 
 import android.Manifest
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.ImageDecoder
+import android.graphics.Paint
+import android.graphics.RectF
 import android.media.MediaActionSound
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
@@ -28,9 +36,14 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.ali.thingscounter.databinding.ActivityMainBinding
+import com.example.ali.thingscounter.ml.SsdMobilenetV11Metadata1
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.tensorflow.lite.support.common.FileUtil
+import org.tensorflow.lite.support.image.ImageProcessor
+import org.tensorflow.lite.support.image.TensorImage
+import org.tensorflow.lite.support.image.ops.ResizeOp
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.ExecutorService
@@ -43,6 +56,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cameraInfo: CameraInfo
     private lateinit var cameraControl: CameraControl
     private val mediaActionSound = MediaActionSound()
+    private val paint = Paint()
+    private lateinit var bitmapImage: Bitmap
+    private lateinit var model: SsdMobilenetV11Metadata1
+    private lateinit var labels: MutableList<String>
+    private val imageProcessor = ImageProcessor.Builder()
+        .add(ResizeOp(300, 300, ResizeOp.ResizeMethod.BILINEAR))
+        .build()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.getInsetsController(window, window.decorView).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -51,9 +72,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        if (allPermissionGranted())
+        if (allPermissionGranted()) {
+            model = SsdMobilenetV11Metadata1.newInstance(this)
+            labels = FileUtil.loadLabels(this, "labels.txt")
             startCamera()
-        else
+        } else
             requestPermissions()
         val scaleGestureDetector = ScaleGestureDetector(
             this,
@@ -99,6 +122,7 @@ class MainActivity : AppCompatActivity() {
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     Log.i("CameraX", outputFileResults.savedUri.toString())
+                    outputFileResults.savedUri?.let { runObjectDetection(it) }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -199,6 +223,76 @@ class MainActivity : AppCompatActivity() {
         }, ContextCompat.getMainExecutor(this))
     }
 
+    private fun runObjectDetection(uri: Uri) {
+        bitmapImage = getBitmapFromUri(this.contentResolver, uri) ?: Bitmap.createBitmap(
+            1,
+            1,
+            Bitmap.Config.ARGB_8888
+        )
+        var image = TensorImage.fromBitmap(bitmapImage)
+        image = imageProcessor.process(image)
+        // TensorFlow Main Process On Image Occurs Here!
+        val outputs = model.process(image)
+        val locations = outputs.locationsAsTensorBuffer.floatArray
+        val classes = outputs.classesAsTensorBuffer.floatArray
+        val scores = outputs.scoresAsTensorBuffer.floatArray
+        val numberOfDetections = outputs.numberOfDetectionsAsTensorBuffer.floatArray
+        val height = bitmapImage.height
+        val width = bitmapImage.width
+        paint.textSize = 65f
+        paint.strokeWidth = 10f
+        // Draw Box On Detected Objects
+        val canvas = Canvas(bitmapImage)
+        var x: Int
+        scores.forEachIndexed { index, fl ->
+            x = index
+            x *= 4
+            if (fl > 0.3) {
+                paint.style = Paint.Style.STROKE
+                canvas.drawRect(
+                    RectF(
+                        locations[x + 1] * width,
+                        locations[x] * height,
+                        locations[x + 3] * width,
+                        locations[x + 2] * height
+                    ), paint
+                )
+                paint.style = Paint.Style.FILL
+                canvas.drawText(
+                    labels[classes[index].toInt()] + " " + fl.toString(),
+                    locations[x + 1] * width,
+                    locations[x] * height,
+                    paint
+                )
+            }
+        }
+        /*val imageView = binding.resultImageView
+        imageView.visibility = View.VISIBLE
+        imageView.setImageBitmap(bitmapImage)*/
+    }
+
+    private fun getBitmapFromUri(contentResolver: ContentResolver, uri: Uri): Bitmap? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val source = ImageDecoder.createSource(contentResolver, uri)
+                ImageDecoder.decodeBitmap(source) { decoder, _, _ ->
+                    decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
+                    // Canvas Requires Mutable Bitmap
+                    decoder.isMutableRequired = true
+                }
+            } else {
+                contentResolver.openInputStream(uri)?.use { inputStream ->
+                    // Need To Copy Bitmap In Order To Making A Mutable Bitmap For Canvas
+                    BitmapFactory.decodeStream(inputStream)
+                        .copy(Bitmap.Config.ARGB_8888, true)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
     private fun playShutterSound() {
         mediaActionSound.load(MediaActionSound.SHUTTER_CLICK)
         mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)
@@ -233,6 +327,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         cameraExecutor.shutdown()
         mediaActionSound.release()
+        model.close()
     }
 
     companion object {
