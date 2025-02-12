@@ -58,7 +58,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageButton
-            android:id="@+id/ic_select_from_gallery"
+            android:id="@+id/btn_visual_media_picker"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/select_from_gallery_icon_border"
@@ -66,8 +66,9 @@
             android:contentDescription="@string/select_from_gallery"
             android:elevation="25dp"
             android:focusable="true"
-            android:scaleType="centerInside"
-            android:src="@mipmap/ic_launcher" />
+            android:scaleType="fitXY"
+            android:padding="3dp"
+            tools:src="@mipmap/ic_launcher" />
 
     </LinearLayout>
 

@@ -15,12 +15,14 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.MediaStore.Images.Media
 import android.util.Log
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraControl
@@ -63,6 +65,14 @@ class MainActivity : AppCompatActivity() {
     private val imageProcessor = ImageProcessor.Builder()
         .add(ResizeOp(300, 300, ResizeOp.ResizeMethod.BILINEAR))
         .build()
+    private val pickVisualMedia =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+            if (uri != null) {
+                runObjectDetection(uri)
+                Log.d("PHOTO_PICKER", "Selected URI: $uri")
+            } else
+                Log.d("PHOTO_PICKER", "No media selected")
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -72,6 +82,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val visualMediaPickerButton = binding.btnVisualMediaPicker
+        visualMediaPickerButton.setImageURI(getLatestGalleryImage())
+        visualMediaPickerButton.setOnClickListener {
+            pickVisualMedia.launch(
+                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            )
+        }
         if (allPermissionGranted()) {
             model = SsdMobilenetV11Metadata1.newInstance(this)
             labels = FileUtil.loadLabels(this, "labels.txt")
@@ -107,12 +124,12 @@ class MainActivity : AppCompatActivity() {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Things Counter")
+                put(Media.RELATIVE_PATH, "Pictures/Things Counter")
             }
         }
         val outputFile = ImageCapture.OutputFileOptions.Builder(
             contentResolver,
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            Media.EXTERNAL_CONTENT_URI,
             contentValue
         ).build()
 
@@ -293,6 +310,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getLatestGalleryImage(): Uri? {
+        val contentUri: Uri =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+            else
+                Media.EXTERNAL_CONTENT_URI
+        contentResolver.query(
+            contentUri,
+            arrayOf(Media._ID),
+            null,
+            null,
+            "${Media.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val idColumn = cursor.getColumnIndex(Media._ID)
+                return Uri.withAppendedPath(
+                    Media.EXTERNAL_CONTENT_URI,
+                    cursor.getLong(idColumn).toString()
+                )
+            }
+        }
+        return null
+    }
+
     private fun playShutterSound() {
         mediaActionSound.load(MediaActionSound.SHUTTER_CLICK)
         mediaActionSound.play(MediaActionSound.SHUTTER_CLICK)
@@ -317,7 +358,7 @@ class MainActivity : AppCompatActivity() {
                     isPermissionGranted = false
             }
             if (!isPermissionGranted) {
-                val toastMessage = "Camera permission is disabled. Please allow it to continue."
+                val toastMessage = "Permissions are disabled. Please allow it to continue."
                 Toast.makeText(baseContext, toastMessage, Toast.LENGTH_LONG).show()
             } else
                 startCamera()
@@ -333,10 +374,17 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val FILENAME_FORMAT = "yyyy-MM-dd-HH-mm-ss-SSS"
         private val REQUIRED_PERMISSIONS: Array<String> =
-            mutableListOf(Manifest.permission.CAMERA).apply {
-                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
-                    add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                }
-            }.toTypedArray()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                mutableListOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ).apply {}.toTypedArray()
+            } else {
+                mutableListOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                ).apply {}.toTypedArray()
+            }
     }
 }
