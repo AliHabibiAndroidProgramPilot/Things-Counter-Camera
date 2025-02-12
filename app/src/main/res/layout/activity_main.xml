@@ -44,8 +44,32 @@
             app:layout_constraintEnd_toEndOf="@id/viewFinderBox"
             app:layout_constraintStart_toStartOf="@id/viewFinderBox"
             app:layout_constraintTop_toTopOf="@id/viewFinderBox" />
+
     </FrameLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/black"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:id="@+id/ic_select_from_gallery"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/select_from_gallery_icon_border"
+            android:clickable="true"
+            android:contentDescription="@string/select_from_gallery"
+            android:elevation="25dp"
+            android:focusable="true"
+            android:scaleType="centerInside"
+            android:src="@mipmap/ic_launcher" />
+
+    </LinearLayout>
 
     <ImageButton
         android:id="@+id/image_capture_button"
@@ -68,13 +92,13 @@
         android:layout_width="70dp"
         android:layout_height="70dp"
         android:contentDescription="@string/image_capture_icon"
-        android:src="@drawable/circle"
         android:scaleType="fitXY"
+        android:src="@drawable/circle"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="@id/image_capture_button"
         app:layout_constraintBottom_toBottomOf="@id/image_capture_button"
         app:layout_constraintEnd_toStartOf="@id/image_capture_button"
-        app:layout_constraintStart_toEndOf="@id/image_capture_button" />
+        app:layout_constraintStart_toEndOf="@id/image_capture_button"
+        app:layout_constraintTop_toTopOf="@id/image_capture_button" />
 
     <ImageButton
         android:id="@+id/ic_flash"

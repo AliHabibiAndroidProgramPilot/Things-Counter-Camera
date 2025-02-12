@@ -3,4 +3,5 @@
     <string name="flash_icon">Flash_Icon</string>
     <string name="image_capture_icon">image_capture_icon</string>
     <string name="change_camera_icon">change_camera_icon</string>
+    <string name="select_from_gallery">select from gallery</string>
 </resources>
