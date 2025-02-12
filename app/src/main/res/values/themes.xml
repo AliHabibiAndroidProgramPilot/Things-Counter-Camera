@@ -5,5 +5,11 @@
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
     </style>
 
+    <style name="roundedImageViewRounded" parent="Base.Theme.ThingsCounter">
+
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     <style name="Theme.ThingsCounter" parent="Base.Theme.ThingsCounter" />
 </resources>

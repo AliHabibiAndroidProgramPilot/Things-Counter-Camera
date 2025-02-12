@@ -57,16 +57,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageButton
+        <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/btn_visual_media_picker"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/select_from_gallery_icon_border"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            app:shapeAppearanceOverlay="@style/roundedImageViewRounded"
             android:clickable="true"
+            app:strokeWidth="3dp"
+            app:strokeColor="@color/white_stroke"
             android:contentDescription="@string/select_from_gallery"
             android:elevation="25dp"
             android:focusable="true"
-            android:scaleType="fitXY"
+            android:scaleType="centerCrop"
             android:padding="3dp"
             tools:src="@mipmap/ic_launcher" />
 
